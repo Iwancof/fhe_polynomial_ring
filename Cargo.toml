@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+distr_traits = { version = "0.1.0", path = "../../distr_traits", features = ["derive"] }
 num-traits = "0.2.18"
+rand = "0.8.5"
 
 [dev-dependencies]
 approx = "0.5.1"

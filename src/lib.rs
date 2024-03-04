@@ -2,6 +2,8 @@
 #[macro_use]
 extern crate approx;
 
+use distr_traits::{normal::NormalSample, uniform::UniformSample};
+
 /// PolynomialRing<N, T> is a polynomial ring of quotient ring.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PolynomialRing<const N: usize, T> {
@@ -12,6 +14,20 @@ pub struct PolynomialRing<const N: usize, T> {
 impl<const N: usize, T> PolynomialRing<N, T> {
     pub fn new(coefficients: [T; N]) -> Self {
         Self { coefficients }
+    }
+}
+
+impl<const N: usize, T> std::ops::Index<usize> for PolynomialRing<N, T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.coefficients[index]
+    }
+}
+
+impl<const N: usize, T> std::ops::IndexMut<usize> for PolynomialRing<N, T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.coefficients[index]
     }
 }
 
@@ -65,6 +81,23 @@ where
         }
 
         Self::Output { coefficients }
+    }
+}
+
+impl<const N: usize, T: NormalSample> NormalSample for PolynomialRing<N, T> {
+    type Mean = T::Mean;
+    type Variance = T::Variance;
+
+    fn normal_sample(mean: Self::Mean, variance: Self::Variance, rng: &mut impl rand::Rng) -> Self {
+        let coefficients = <[T; N] as NormalSample>::normal_sample(mean, variance, rng);
+        Self::new(coefficients)
+    }
+}
+
+impl<const N: usize, T: UniformSample> UniformSample for PolynomialRing<N, T> {
+    fn uniform_sample(rng: &mut impl rand::Rng) -> Self {
+        let coefficients = <[T; N] as UniformSample>::uniform_sample(rng);
+        Self::new(coefficients)
     }
 }
 
@@ -139,8 +172,9 @@ mod tests {
     }
 
     #[test]
-    fn test_torus() {
+    fn test_torus_1() {
         use fixed_torus::Torus;
+
         let a = PolynomialRing::new([Torus::from(0.7), Torus::from(1.4)]);
         let b = PolynomialRing::new([0, 1]);
         let c = a * b;
@@ -149,5 +183,18 @@ mod tests {
 
         assert_relative_eq!(f64::from(c.coefficients[0]), 0.6, epsilon = 1e-6);
         assert_relative_eq!(f64::from(c.coefficients[1]), 0.7, epsilon = 1e-6);
+    }
+
+    #[test]
+    fn test_torus_2() {
+        use fixed_torus::Torus;
+
+        let a = PolynomialRing::new([Torus::from(-0.1), Torus::from(0.3)]);
+        let b = PolynomialRing::new([1, 3]);
+
+        let c = a * b; // 0
+
+        assert_relative_eq!(f64::from(c.coefficients[0]), 0.0, epsilon = 1e-6);
+        assert_relative_eq!(f64::from(c.coefficients[1]), 1.0, epsilon = 1e-6); // 0 = 1
     }
 }
