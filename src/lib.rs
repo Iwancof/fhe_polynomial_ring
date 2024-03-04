@@ -15,6 +15,16 @@ impl<const N: usize, T> PolynomialRing<N, T> {
     pub fn new(coefficients: [T; N]) -> Self {
         Self { coefficients }
     }
+
+    pub fn scalar_mul<U>(&mut self, scalar: U)
+    where
+        T: std::ops::MulAssign<U>,
+        U: Copy,
+    {
+        self.coefficients.iter_mut().for_each(|c| {
+            *c *= scalar;
+        });
+    }
 }
 
 impl<const N: usize, T> std::ops::Index<usize> for PolynomialRing<N, T> {
