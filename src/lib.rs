@@ -15,16 +15,6 @@ impl<const N: usize, T> PolynomialRing<N, T> {
     pub fn new(coefficients: [T; N]) -> Self {
         Self { coefficients }
     }
-
-    pub fn scalar_mul<U>(&mut self, scalar: U)
-    where
-        T: std::ops::MulAssign<U>,
-        U: Copy,
-    {
-        self.coefficients.iter_mut().for_each(|c| {
-            *c *= scalar;
-        });
-    }
 }
 
 impl<const N: usize, T> std::ops::Index<usize> for PolynomialRing<N, T> {
@@ -38,6 +28,23 @@ impl<const N: usize, T> std::ops::Index<usize> for PolynomialRing<N, T> {
 impl<const N: usize, T> std::ops::IndexMut<usize> for PolynomialRing<N, T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.coefficients[index]
+    }
+}
+
+impl<const N: usize, T> From<T> for PolynomialRing<N, T>
+where
+    T: num_traits::identities::Zero + Copy,
+{
+    fn from(t: T) -> Self {
+        let mut coefficients = [T::zero(); N];
+        coefficients[0] = t;
+        Self { coefficients }
+    }
+}
+
+impl<const N: usize, T> From<[T; N]> for PolynomialRing<N, T> {
+    fn from(coefficients: [T; N]) -> Self {
+        Self { coefficients }
     }
 }
 
@@ -179,6 +186,14 @@ mod tests {
         let b = PolynomialRing::new([0, 1, 0]); // x
         let c = a * b; // x^3 + x % (x^2 + 1) = x - 1
         assert_eq!(c.coefficients, [-1, 1, 0]);
+    }
+
+    #[test]
+    fn test_scalar_mul() {
+        let a = PolynomialRing::new([1, 2, 3]);
+        let b = 2;
+        let c = a * b.into();
+        assert_eq!(c.coefficients, [2, 4, 6]);
     }
 
     #[test]
